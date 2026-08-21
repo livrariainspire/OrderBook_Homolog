@@ -82,7 +82,10 @@
       </table>
 
       <div v-if="aberto.status === 'enviado'" style="margin-top:20px">
-        <div class="aviso aviso-atencao">Confira o que chegou e confirme para finalizar o pedido.</div>
+        <div class="aviso aviso-atencao">
+          Confira o que chegou e confirme para finalizar o pedido.
+          <template v-if="ehIgreja"> O material fica registrado em "Material recebido".</template>
+        </div>
         <div class="grupo">
           <label class="rotulo">Observação (opcional)</label>
           <input v-model="obsRecebimento" class="campo" placeholder="Ex.: recebido em bom estado" />
@@ -105,6 +108,7 @@
 definePageMeta({ layout: 'app' })
 
 const supa = useSupa()
+const ehIgreja = computed(() => useSessao().value.perfil?.role === 'igreja')
 const pedidos = ref<any[]>([])
 const carregando = ref(true)
 const situacao = ref('')

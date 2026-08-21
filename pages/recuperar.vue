@@ -19,7 +19,7 @@
             <input v-model="email" class="campo" type="email" required placeholder="nome@exemplo.com.br" />
           </div>
           <button class="btn btn-principal" :disabled="ocupado">
-            {{ ocupado ? 'Enviando...' : 'Enviar codigo' }}
+            {{ ocupado ? 'Enviando...' : 'Enviar código' }}
           </button>
         </form>
 
@@ -63,7 +63,7 @@
 
         <div class="linha-acoes" style="justify-content:center;margin-top:18px;gap:22px">
           <button class="btn-linha" :disabled="espera > 0 || ocupado" @click="pedirCodigo">
-            {{ espera > 0 ? `Reenviar em ${espera}s` : 'Reenviar codigo' }}
+            {{ espera > 0 ? `Reenviar em ${espera}s` : 'Reenviar código' }}
           </button>
           <button class="btn-linha" @click="etapa = 'email'">Corrigir o e-mail</button>
         </div>

@@ -59,7 +59,7 @@
 
       <div class="painel">
         <div class="painel-topo"><h2>Concluidos por mim</h2></div>
-        <TabelaVazia v-if="!concluidos.length" titulo="Nenhum pedido concluido" texto="Seus envios aparecem aqui." />
+        <TabelaVazia v-if="!concluidos.length" titulo="Nenhum pedido concluído" texto="Seus envios aparecem aqui." />
         <div v-else class="tabela-rolagem">
           <table class="lista">
             <thead><tr><th>Código</th><th>Filial</th><th>Situação</th><th>Enviado em</th><th></th></tr></thead>
@@ -91,6 +91,14 @@
       </div>
       <div v-if="atual.note" class="aviso aviso-info">{{ atual.note }}</div>
       <div v-if="erroJanela" class="aviso aviso-erro">{{ erroJanela }}</div>
+      <p class="mini" style="margin-bottom:14px">
+        <template v-if="atual.tipo === 'igreja'">
+          Igreja da Rede: o material entra como entrega registrada. Não há estoque nem venda a lançar.
+        </template>
+        <template v-else>
+          Ponto de Partida: o que for enviado entra no estoque da filial.
+        </template>
+      </p>
 
       <h4 style="font-size:14px;margin-bottom:10px">Itens do pedido</h4>
       <div v-for="i in atual.order_items" :key="i.id" class="carrinho-item" :class="{ 'item-retirado': i.removed }">
@@ -161,9 +169,9 @@ const podeEditar = computed(() => atual.value?.status === 'em_atendimento')
 async function carregar() {
   const id = sessao.value.perfil!.id
   const [a, e, c] = await Promise.all([
-    supa.from('orders').select('*, order_items(*)').eq('attendant_id', id).eq('status', 'em_atendimento').order('claimed_at'),
-    supa.from('orders').select('*, order_items(*)').eq('attendant_id', id).eq('status', 'em_espera').order('created_at'),
-    supa.from('orders').select('*, order_items(*)').eq('attendant_id', id).in('status', ['enviado', 'finalizado']).order('completed_at', { ascending: false }).limit(30)
+    supa.from('orders').select('*, order_items(*), units(type)').eq('attendant_id', id).eq('status', 'em_atendimento').order('claimed_at'),
+    supa.from('orders').select('*, order_items(*), units(type)').eq('attendant_id', id).eq('status', 'em_espera').order('created_at'),
+    supa.from('orders').select('*, order_items(*), units(type)').eq('attendant_id', id).in('status', ['enviado', 'finalizado']).order('completed_at', { ascending: false }).limit(30)
   ])
   abertos.value = a.data ?? []
   espera.value = e.data ?? []
@@ -174,8 +182,8 @@ async function carregar() {
 onMounted(carregar)
 
 async function recarregarAtual() {
-  const { data } = await supa.from('orders').select('*, order_items(*)').eq('id', atual.value.id).single()
-  if (data) atual.value = { ...data, order_items: prepararItens(data) }
+  const { data } = await supa.from('orders').select('*, order_items(*), units(type)').eq('id', atual.value.id).single()
+  if (data) atual.value = { ...data, tipo: (data as any).units?.type, order_items: prepararItens(data) }
 }
 
 const prepararItens = (p: any) => p.order_items
@@ -184,7 +192,7 @@ const prepararItens = (p: any) => p.order_items
 
 function abrir(p: any) {
   erroJanela.value = ''; criarEspera.value = true; notaEspera.value = ''
-  atual.value = { ...p, order_items: prepararItens(p) }
+  atual.value = { ...p, tipo: p.units?.type, order_items: prepararItens(p) }
 }
 function fechar() { atual.value = null; carregar() }
 

@@ -53,10 +53,20 @@ const rotuloAcao = (a: string) => ({
   usuario_aprovado: 'Usuário aprovado',
   usuario_status: 'Situação do usuário alterada',
   usuario_criado: 'Usuário criado',
-  usuario_excluido: 'Usuário excluido',
+  usuario_excluido: 'Usuário excluído',
   senha_redefinida: 'Senha redefinida',
   link_recuperacao: 'Link de recuperação gerado',
-  senha_recuperada: 'Senha recuperada pelo próprio usuário'
+  senha_recuperada: 'Senha recuperada pelo próprio usuário',
+  maquininha_cadastrada: 'Maquininha cadastrada',
+  maquininha_alterada: 'Maquininha alterada',
+  maquininha_excluida: 'Maquininha excluída',
+  configuracao_alterada: 'Configuração alterada',
+  produto_excluido: 'Produto excluído',
+  unidade_excluida: 'Filial excluída',
+  email_alterado: 'E-mail de acesso alterado',
+  cobranca_criada: 'Cobrança enviada à maquininha',
+  cobranca_paga: 'Pagamento confirmado',
+  cobranca_cancelada: 'Cobrança cancelada'
 }[a] ?? a)
 
 const filtrados = computed(() => {

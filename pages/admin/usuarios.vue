@@ -310,7 +310,7 @@ async function excluirUsuario() {
   msg.value = ''; ocupado.value = true
   try {
     await chamarApi('/delete-user', { user_id: alvoExcluir.value.id })
-    erro.value = false; msg.value = 'Usuário excluido.'
+    erro.value = false; msg.value = 'Usuário excluído.'
     alvoExcluir.value = null; carregar()
   } catch (e: any) { erro.value = true; msg.value = e.message }
   ocupado.value = false

@@ -106,8 +106,6 @@ select.campo { appearance: none; background-image: linear-gradient(45deg, transp
 .grupo { margin-bottom: 16px; }
 .grade-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
 @media (max-width: 620px) { .grade-2 { grid-template-columns: 1fr; } }
-.grade-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
-@media (max-width: 860px) { .grade-3 { grid-template-columns: 1fr; } }
 
 /* ---------- Botões ---------- */
 .btn {

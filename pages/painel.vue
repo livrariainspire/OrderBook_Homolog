@@ -59,9 +59,9 @@ const ehStaff = computed(() => ['admin', 'atendente'].includes(perfil.value?.rol
 const primeiroNome = computed(() => (perfil.value?.full_name || '').split(' ')[0] || 'tudo bem')
 
 const frase = computed(() => ({
-  admin: 'Visao geral da operação da livraria.',
+  admin: 'Visão geral da operação da livraria.',
   atendente: 'Acompanhe a fila e seus atendimentos.',
-  igreja: 'Peça livros e itens, controle o estoque e registre as vendas.',
+  igreja: 'Peça livros e itens à livraria e confirme o que receber.',
   ponto: 'Peça livros e itens, controle o estoque e registre as vendas.'
 }[perfil.value?.role ?? ''] ?? ''))
 
@@ -104,6 +104,26 @@ onMounted(async () => {
     ]
   } else {
     const uid = perfil.value?.unit_id
+
+    // Igreja da Rede: sem estoque e sem venda, so pedidos e recebimentos
+    if (perfil.value?.role === 'igreja') {
+      const [abertos, confirmar, entregas] = await Promise.all([
+        supa.from('orders').select('id', { count: 'exact', head: true })
+          .eq('unit_id', uid).in('status', ['fila', 'em_atendimento', 'em_espera']),
+        supa.from('orders').select('id', { count: 'exact', head: true })
+          .eq('unit_id', uid).eq('status', 'enviado'),
+        supa.rpc('fn_entregas_filial', { p_unit: null })
+      ])
+      const recebidos = (entregas.data ?? []).reduce((s: number, l: any) => s + Number(l.total_recebido), 0)
+      cartoes.value = [
+        { rotulo: 'Pedidos em andamento', valor: abertos.count ?? 0, nota: 'Ainda não entregues' },
+        { rotulo: 'A confirmar', valor: confirmar.count ?? 0, nota: 'Chegaram e aguardam sua confirmação' },
+        { rotulo: 'Itens recebidos', valor: recebidos, nota: 'Somando todas as entregas' }
+      ]
+      carregando.value = false
+      return
+    }
+
     const [abertos, est, vendas] = await Promise.all([
       supa.from('orders').select('id', { count: 'exact', head: true }).eq('unit_id', uid).in('status', ['fila', 'em_atendimento', 'em_espera', 'enviado']),
       supa.from('stock').select('qty').eq('unit_id', uid),

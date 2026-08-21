@@ -1,10 +1,8 @@
 <template>
   <div>
     <div class="cabecalho">
-      <div>
-        <h1>Catálogo</h1>
-        <p>O cadastro vem da Omie. Aqui você completa a foto, o resumo e quem pode pedir.</p>
-      </div>
+      <div><h1>Catálogo</h1><p>Livros e demais itens da livraria, com a foto e quem pode pedir.</p></div>
+      <button class="btn btn-principal btn-p" @click="abrirNovo">Cadastrar produto</button>
     </div>
 
     <div v-if="msg" class="aviso" :class="erro ? 'aviso-erro' : 'aviso-ok'">{{ msg }}</div>
@@ -12,18 +10,11 @@
 
     <div v-else class="painel">
       <div class="painel-topo">
-        <h2>{{ filtrados.length }} produto(s)</h2>
-        <div style="display:flex;gap:8px">
-          <select v-model="situacao" class="campo" style="max-width:150px">
-            <option value="ativos">Ativos</option>
-            <option value="inativos">Inativos</option>
-            <option value="todos">Todos</option>
-          </select>
-          <input v-model="busca" class="campo" style="max-width:260px" type="search" placeholder="Buscar no catálogo" />
-        </div>
+        <h2>{{ lista.length }} produto(s)</h2>
+        <input v-model="busca" class="campo" style="max-width:280px" type="search" placeholder="Buscar no catálogo" />
       </div>
       <TabelaVazia v-if="!filtrados.length" titulo="Catálogo vazio"
-        texto="Cadastre os produtos na Omie e use Importar da Omie." />
+        texto="Cadastre o primeiro livro ou item da livraria." />
       <div v-else class="tabela-rolagem">
         <table class="lista">
           <thead><tr><th>Produto</th><th>Tipo</th><th>Quem pode pedir</th><th>Situação</th><th></th></tr></thead>
@@ -48,30 +39,17 @@
       </div>
     </div>
 
-    <JanelaModal v-if="form" titulo="Completar produto" @fechar="form = null">
-      <div class="aviso" style="margin-bottom:14px">
-        Código, título, preço e NCM vêm da Omie e não podem ser alterados aqui.
-      </div>
-      <div class="grade-2">
-        <div class="grupo">
-          <label class="rotulo">Código na Omie</label>
-          <input :value="form.codigo || '—'" class="campo" disabled />
-        </div>
-        <div class="grupo">
-          <label class="rotulo">Preço de tabela</label>
-          <input :value="moeda(form.preco_tabela)" class="campo" disabled />
-        </div>
-      </div>
-      <div class="grupo">
-        <label class="rotulo">Título (vem da Omie)</label>
-        <input :value="form.title" class="campo" disabled />
-      </div>
+    <JanelaModal v-if="form" :titulo="form.id ? 'Editar produto' : 'Cadastrar produto'" @fechar="form = null">
       <div class="grupo">
         <label class="rotulo">Tipo de produto</label>
         <select v-model="form.type" class="campo">
           <option value="livro">Livro</option>
-          <option value="item">Outro item (quadro, oleo de unção, memorial...)</option>
+          <option value="item">Outro item (quadro, óleo de unção, memorial...)</option>
         </select>
+      </div>
+      <div class="grupo">
+        <label class="rotulo">{{ form.type === 'livro' ? 'Titulo' : 'Nome do item' }}</label>
+        <input v-model="form.title" class="campo" />
       </div>
       <div v-if="form.type === 'livro'" class="grade-2">
         <div class="grupo">
@@ -86,6 +64,10 @@
       <div class="grupo">
         <label class="rotulo">Breve resumo</label>
         <textarea v-model="form.summary" class="campo" placeholder="Do que se trata, em poucas linhas"></textarea>
+      </div>
+      <div class="grupo">
+        <label class="rotulo">Código do produto na Omie (opcional)</label>
+        <input v-model="form.omie_code" class="campo" placeholder="Deixe vazio se ainda não souber" />
       </div>
       <div class="grupo">
         <label class="rotulo">Quem pode pedir</label>
@@ -105,6 +87,9 @@
         <span style="font-size:14px">Produto disponível para pedidos</span>
       </label>
       <template #acoes>
+        <button v-if="form.id" class="btn btn-perigo btn-p" style="margin-right:auto" :disabled="ocupado" @click="excluir">
+          Excluir produto
+        </button>
         <button class="btn btn-neutro btn-p" @click="form = null">Cancelar</button>
         <button class="btn btn-principal btn-p" style="width:auto" :disabled="ocupado" @click="salvar">
           {{ ocupado ? 'Salvando...' : 'Salvar' }}
@@ -128,35 +113,38 @@ const msg = ref(''); const erro = ref(false)
 
 const rotuloVis = (v: string) => ({ ambos: 'Todos', igreja: 'Igrejas da Rede', ponto: 'Pontos de Partida' }[v] ?? v)
 
-const situacao = ref('ativos')
-
 const filtrados = computed(() => {
   const t = busca.value.trim().toLowerCase()
-  let base = lista.value
-  if (situacao.value === 'ativos') base = base.filter(p => p.active)
-  if (situacao.value === 'inativos') base = base.filter(p => !p.active)
-  if (!t) return base
-  return base.filter(p => (p.search_text || '').includes(t))
+  if (!t) return lista.value
+  return lista.value.filter(p => (p.search_text || '').includes(t))
 })
 
 async function carregar() {
-  // O catalogo e o que existe na Omie. Produto sem ligacao nao aparece.
-  const { data } = await supa.from('products')
-    .select('*').not('omie_id', 'is', null).order('title')
+  const { data } = await supa.from('products').select('*').order('title')
   lista.value = data ?? []
   carregando.value = false
 }
 onMounted(carregar)
 
-const moeda = (v: any) =>
-  v === null || v === undefined || v === ''
-    ? '—'
-    : Number(v).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
-
+function abrirNovo() {
+  novaFoto.value = null
+  form.value = { type: 'livro', title: '', author: '', edition: '', summary: '', visibility: 'ambos', active: true, photo_url: null }
+}
 function editar(p: any) { novaFoto.value = null; form.value = { ...p } }
+
+async function excluir() {
+  if (!confirm(`Excluir "${form.value.title}" do catálogo? Não dá para desfazer.`)) return
+  ocupado.value = true; msg.value = ''
+  const { error } = await supa.rpc('fn_delete_product', { p_id: form.value.id })
+  ocupado.value = false
+  if (error) { erro.value = true; msg.value = error.message; form.value = null; return }
+  erro.value = false; msg.value = 'Produto excluído.'
+  form.value = null; carregar()
+}
 
 async function salvar() {
   msg.value = ''
+  if (!form.value.title?.trim()) { erro.value = true; msg.value = 'Informe o titulo do produto.'; return }
   ocupado.value = true
   try {
     let foto = form.value.photo_url
@@ -169,14 +157,18 @@ async function salvar() {
     }
     const dados: any = {
       type: form.value.type,
+      title: form.value.title.trim(),
       author: form.value.type === 'livro' ? (form.value.author || null) : null,
       edition: form.value.type === 'livro' ? (form.value.edition || null) : null,
       summary: form.value.summary || null,
       visibility: form.value.visibility,
       active: form.value.active,
+      omie_code: form.value.omie_code || null,
       photo_url: foto
     }
-    const { error } = await supa.from('products').update(dados).eq('id', form.value.id)
+    const { error } = form.value.id
+      ? await supa.from('products').update(dados).eq('id', form.value.id)
+      : await supa.from('products').insert(dados)
     if (error) throw new Error(error.message)
     erro.value = false; msg.value = 'Produto salvo.'
     form.value = null; carregar()

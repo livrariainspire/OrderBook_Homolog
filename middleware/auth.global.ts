@@ -24,4 +24,13 @@ export default defineNuxtRouteMiddleware(async (para) => {
   if (logado && perfil?.status === 'aprovado' && para.path.startsWith('/admin') && perfil.role !== 'admin') {
     return navigateTo('/painel')
   }
+
+  // Igreja da Rede nao controla estoque nem registra venda
+  const soPonto = ['/estoque', '/vendas', '/maquininha']
+  if (logado && perfil?.role === 'igreja' && soPonto.some(r => para.path.startsWith(r))) {
+    return navigateTo('/recebidos')
+  }
+  if (logado && perfil?.role !== 'igreja' && para.path === '/recebidos') {
+    return navigateTo('/painel')
+  }
 })
