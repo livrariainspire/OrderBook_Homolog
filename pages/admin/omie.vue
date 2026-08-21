@@ -72,10 +72,44 @@
 
       <div class="painel" style="margin-top:16px">
         <div class="painel-topo">
+          <h2>Onde está cada produto</h2>
+          <span class="rotulo">Matriz = saldo na Omie menos o que está nas filiais</span>
+        </div>
+        <TabelaVazia v-if="!estoque.length" titulo="Sem dados"
+          texto="Atualize a tela para consultar o estoque da Omie." />
+        <div v-else class="tabela-rolagem">
+          <table class="lista">
+            <thead>
+              <tr><th>Código</th><th>Produto</th><th>Na Omie</th>
+                  <th>Matriz</th><th>Nas filiais</th></tr>
+            </thead>
+            <tbody>
+              <tr v-for="p in estoque" :key="p.product_id">
+                <td><strong>{{ p.codigo }}</strong></td>
+                <td>{{ p.titulo }}</td>
+                <td>{{ p.saldo_omie }}</td>
+                <td>
+                  <span class="selo" :class="Number(p.matriz) > 0 ? 'selo-enviado' : 'selo-neutro'">
+                    {{ p.matriz }}
+                  </span>
+                </td>
+                <td>
+                  <span v-if="!p.filiais.length" class="rotulo">—</span>
+                  <span v-for="f in p.filiais" :key="f.filial" class="selo selo-laranja"
+                        style="margin-right:6px">
+                    {{ f.filial }}: {{ f.qtd }}
+                  </span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="painel" style="margin-top:16px">
+        <div class="painel-topo">
           <h2>Vendas enviadas à Omie</h2>
-          <button class="btn btn-neutro btn-p" :disabled="ocupado" @click="enviarVendas">
-            {{ enviandoVendas ? 'Enviando...' : 'Enviar pendentes' }}
-          </button>
+          <span class="rotulo">sobem sozinhas assim que a venda é registrada</span>
         </div>
 
         <TabelaVazia v-if="!vendas.length" titulo="Nenhuma venda"
@@ -117,32 +151,20 @@ const erro = ref(false)
 const busca = ref('')
 const dados = ref<any>(null)
 const importando = ref(false)
-const enviandoVendas = ref(false)
 const vendas = ref<any[]>([])
+const estoque = ref<any[]>([])
+
+async function carregarEstoque () {
+  const { data } = await useSupa().rpc('fn_estoque_geral')
+  estoque.value = data ?? []
+}
 
 async function carregarVendas () {
   const { data } = await useSupa().rpc('fn_omie_vendas')
   vendas.value = data ?? []
 }
 
-async function enviarVendas () {
-  enviandoVendas.value = true
-  msg.value = ''
-  erro.value = false
-  try {
-    const r = await chamarApi('/omie/enviar-vendas')
-    msg.value = `${r.enviadas.length} venda(s) enviada(s).`
-      + (r.falhas.length ? ` ${r.falhas.length} com erro.` : '')
-    await carregarVendas()
-  } catch (e: any) {
-    erro.value = true
-    msg.value = e.message || 'Não foi possível enviar as vendas.'
-  } finally {
-    enviandoVendas.value = false
-  }
-}
-
-const ocupado = computed(() => carregando.value || importando.value || enviandoVendas.value)
+const ocupado = computed(() => carregando.value || importando.value)
 
 const moeda = (v: any) =>
   v === null || v === undefined || v === ''
@@ -181,6 +203,8 @@ async function carregar () {
   erro.value = false
   try {
     dados.value = await chamarApi('/omie/estoque')
+    await carregarEstoque()
+    await carregarVendas()
   } catch (e: any) {
     erro.value = true
     msg.value = e.message || 'Não foi possível consultar a Omie.'
@@ -189,5 +213,5 @@ async function carregar () {
   }
 }
 
-onMounted(() => { carregar(); carregarVendas() })
+onMounted(() => { carregar(); carregarVendas(); carregarEstoque() })
 </script>
