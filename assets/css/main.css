@@ -1,0 +1,261 @@
+/* =====================================================================
+   Identidade visual — Livraria Inspire Presence
+   ===================================================================== */
+
+:root {
+  --laranja: #f05a33;
+  --laranja-forte: #d9451d;
+  --laranja-suave: #fdece6;
+  --tinta: #2c2320;
+  --texto: #6f5d55;
+  --rotulo: #a08e86;
+  --linha: #f0e2dc;
+  --campo: #fbf7f5;
+  --branco: #ffffff;
+  --verde: #2f8f6a;
+  --verde-suave: #e6f4ee;
+  --azul: #3a6ea5;
+  --azul-suave: #e8f0f8;
+  --amarelo: #a8761c;
+  --amarelo-suave: #fdf1dc;
+  --vermelho: #c23b28;
+  --vermelho-suave: #fcecea;
+  --raio: 16px;
+  --raio-p: 10px;
+  --sombra: 0 18px 45px -22px rgba(90, 45, 30, .35);
+}
+
+* { box-sizing: border-box; }
+
+html, body, #__nuxt { height: 100%; }
+
+body {
+  margin: 0;
+  font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  color: var(--tinta);
+  background:
+    radial-gradient(1100px 620px at 12% -10%, #fbe0d6 0%, rgba(251, 224, 214, 0) 60%),
+    radial-gradient(900px 520px at 100% 0%, #fdeee8 0%, rgba(253, 238, 232, 0) 55%),
+    #fdf7f4;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3, h4 { margin: 0; font-weight: 700; letter-spacing: -.02em; line-height: 1.2; }
+p { margin: 0; }
+a { color: var(--laranja); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+:focus-visible { outline: 3px solid rgba(240, 90, 51, .45); outline-offset: 2px; border-radius: 6px; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+}
+
+/* ---------- Estruturas ---------- */
+.tela-auth {
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+  padding: 24px 18px;
+}
+
+.cartao {
+  background: var(--branco);
+  border-radius: 20px;
+  box-shadow: var(--sombra);
+  padding: 30px;
+}
+.cartao-auth { width: 100%; max-width: 440px; }
+
+.marca { display: flex; align-items: center; gap: 16px; }
+.marca img { height: 34px; width: auto; display: block; }
+.marca-barra { width: 1px; height: 34px; background: var(--linha); }
+.marca-nome { font-size: 15px; font-weight: 700; line-height: 1.1; }
+.marca-sub { font-size: 10px; letter-spacing: .16em; color: var(--rotulo); text-transform: uppercase; font-weight: 500; }
+
+.divisor { height: 1px; background: var(--linha); border: 0; margin: 24px 0; }
+
+/* ---------- Formulários ---------- */
+.rotulo {
+  display: block;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--rotulo);
+  margin-bottom: 7px;
+}
+
+.campo {
+  width: 100%;
+  padding: 13px 15px;
+  font: inherit;
+  font-size: 14.5px;
+  color: var(--tinta);
+  background: var(--campo);
+  border: 1px solid var(--linha);
+  border-radius: var(--raio-p);
+  transition: border-color .15s, background .15s;
+}
+.campo::placeholder { color: #c3b2ab; }
+.campo:focus { border-color: var(--laranja); background: var(--branco); outline: none; }
+.campo:disabled { opacity: .6; }
+textarea.campo { resize: vertical; min-height: 84px; }
+select.campo { appearance: none; background-image: linear-gradient(45deg, transparent 50%, var(--rotulo) 50%), linear-gradient(135deg, var(--rotulo) 50%, transparent 50%); background-position: calc(100% - 19px) 50%, calc(100% - 14px) 50%; background-size: 5px 5px, 5px 5px; background-repeat: no-repeat; padding-right: 38px; }
+
+.grupo { margin-bottom: 16px; }
+.grade-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+@media (max-width: 620px) { .grade-2 { grid-template-columns: 1fr; } }
+
+/* ---------- Botões ---------- */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  padding: 13px 22px;
+  font: inherit; font-size: 14.5px; font-weight: 600;
+  border: 1px solid transparent; border-radius: 999px;
+  cursor: pointer; transition: filter .15s, background .15s, transform .05s;
+}
+.btn:active { transform: translateY(1px); }
+.btn:disabled { opacity: .5; cursor: not-allowed; }
+.btn-principal { background: var(--laranja); color: #fff; width: 100%; }
+.btn-principal:hover:not(:disabled) { background: var(--laranja-forte); }
+.btn-contorno { background: transparent; color: var(--laranja); border-color: var(--laranja); }
+.btn-contorno:hover:not(:disabled) { background: var(--laranja-suave); }
+.btn-neutro { background: var(--campo); color: var(--texto); border-color: var(--linha); }
+.btn-neutro:hover:not(:disabled) { background: #f3ebe7; }
+.btn-p { padding: 8px 15px; font-size: 13px; width: auto; }
+.btn-linha { background: none; border: 0; color: var(--laranja); font: inherit; font-size: 13px; font-weight: 500; cursor: pointer; padding: 4px; }
+.btn-linha:hover { text-decoration: underline; }
+.btn-perigo { background: var(--vermelho-suave); color: var(--vermelho); border-color: #f2d4cf; }
+
+/* ---------- Avisos ---------- */
+.aviso { padding: 12px 15px; border-radius: var(--raio-p); font-size: 13.5px; line-height: 1.5; margin-bottom: 16px; }
+.aviso-erro { background: var(--vermelho-suave); color: var(--vermelho); }
+.aviso-ok { background: var(--verde-suave); color: var(--verde); }
+.aviso-info { background: var(--azul-suave); color: var(--azul); }
+.aviso-atencao { background: var(--amarelo-suave); color: var(--amarelo); }
+
+/* ---------- Selos de situação ---------- */
+.selo { display: inline-block; padding: 4px 11px; border-radius: 999px; font-size: 11.5px; font-weight: 600; white-space: nowrap; }
+.selo-fila { background: var(--amarelo-suave); color: var(--amarelo); }
+.selo-atendimento { background: var(--azul-suave); color: var(--azul); }
+.selo-enviado { background: var(--verde-suave); color: var(--verde); }
+.selo-cancelado { background: var(--vermelho-suave); color: var(--vermelho); }
+.selo-neutro { background: var(--campo); color: var(--texto); }
+.selo-laranja { background: var(--laranja-suave); color: var(--laranja-forte); }
+
+/* ---------- Aplicação ---------- */
+.app { min-height: 100dvh; display: flex; flex-direction: column; }
+
+.topo {
+  background: var(--branco);
+  border-bottom: 1px solid var(--linha);
+  position: sticky; top: 0; z-index: 40;
+}
+.topo-interno {
+  max-width: 1180px; margin: 0 auto; padding: 12px 20px;
+  display: flex; align-items: center; justify-content: space-between; gap: 16px;
+}
+.topo-usuario { display: flex; align-items: center; gap: 12px; font-size: 13px; color: var(--texto); }
+.topo-usuario strong { color: var(--tinta); font-weight: 600; display: block; font-size: 13.5px; }
+.topo-usuario span { font-size: 11.5px; color: var(--rotulo); }
+
+.menu { background: var(--branco); border-bottom: 1px solid var(--linha); overflow-x: auto; }
+.menu-interno { max-width: 1180px; margin: 0 auto; padding: 0 20px; display: flex; gap: 4px; }
+.menu a {
+  padding: 12px 14px; font-size: 13.5px; font-weight: 500; color: var(--texto);
+  border-bottom: 2px solid transparent; white-space: nowrap; text-decoration: none;
+}
+.menu a:hover { color: var(--tinta); text-decoration: none; }
+.menu a.ativo { color: var(--laranja); border-bottom-color: var(--laranja); font-weight: 600; }
+
+.conteudo { flex: 1; max-width: 1180px; width: 100%; margin: 0 auto; padding: 26px 20px 60px; }
+
+.cabecalho { margin-bottom: 22px; display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+.cabecalho h1 { font-size: 25px; }
+.cabecalho p { color: var(--texto); font-size: 14px; margin-top: 5px; }
+
+/* ---------- Tabelas e listas ---------- */
+.painel { background: var(--branco); border: 1px solid var(--linha); border-radius: var(--raio); overflow: hidden; }
+.painel + .painel { margin-top: 18px; }
+.painel-topo { padding: 16px 20px; border-bottom: 1px solid var(--linha); display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.painel-topo h2 { font-size: 15.5px; }
+.painel-corpo { padding: 20px; }
+
+.tabela-rolagem { overflow-x: auto; }
+table.lista { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+table.lista th {
+  text-align: left; padding: 11px 20px; font-size: 10.5px; font-weight: 600;
+  letter-spacing: .1em; text-transform: uppercase; color: var(--rotulo);
+  background: #fdfaf9; border-bottom: 1px solid var(--linha); white-space: nowrap;
+}
+table.lista td { padding: 13px 20px; border-bottom: 1px solid var(--linha); color: var(--texto); vertical-align: middle; }
+table.lista tbody tr:last-child td { border-bottom: 0; }
+table.lista tbody tr:hover { background: #fefbfa; }
+table.lista td strong { color: var(--tinta); font-weight: 600; }
+.acoes-celula { display: flex; gap: 8px; flex-wrap: wrap; }
+
+.vazio { padding: 46px 20px; text-align: center; color: var(--rotulo); font-size: 14px; }
+.vazio strong { display: block; color: var(--tinta); font-size: 15px; margin-bottom: 6px; font-weight: 600; }
+
+/* ---------- Cartões de resumo ---------- */
+.resumos { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 14px; margin-bottom: 22px; }
+.resumo { background: var(--branco); border: 1px solid var(--linha); border-radius: var(--raio); padding: 18px 20px; }
+.resumo-rotulo { font-size: 11px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: var(--rotulo); }
+.resumo-valor { font-size: 27px; font-weight: 700; margin-top: 7px; color: var(--tinta); }
+.resumo-nota { font-size: 12.5px; color: var(--texto); margin-top: 3px; }
+
+/* ---------- Catálogo / busca ---------- */
+.produto-linha { display: flex; align-items: center; gap: 14px; }
+.produto-foto { width: 46px; height: 62px; border-radius: 7px; object-fit: cover; background: var(--campo); border: 1px solid var(--linha); flex: none; }
+.produto-foto-vazia { display: grid; place-items: center; font-size: 17px; color: var(--rotulo); }
+.produto-nome { font-weight: 600; color: var(--tinta); font-size: 14px; }
+.produto-meta { font-size: 12.5px; color: var(--rotulo); margin-top: 2px; }
+.produto-resumo { font-size: 12.5px; color: var(--texto); margin-top: 4px; line-height: 1.45; }
+
+.busca { position: relative; }
+.busca .campo { padding-left: 40px; }
+.busca-icone { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--rotulo); font-size: 15px; }
+
+/* ---------- Carrinho ---------- */
+.carrinho-item { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--linha); }
+.carrinho-item:last-child { border-bottom: 0; }
+.carrinho-item .cresce { flex: 1; min-width: 0; }
+.qtd { width: 78px; text-align: center; padding: 9px; }
+.preco { width: 118px; padding: 9px 11px; }
+
+/* ---------- Janela ---------- */
+.fundo-janela {
+  position: fixed; inset: 0; background: rgba(44, 35, 32, .5);
+  display: grid; place-items: center; padding: 20px; z-index: 90;
+}
+.janela { background: var(--branco); border-radius: 18px; width: 100%; max-width: 520px; max-height: 88dvh; overflow: auto; }
+.janela-topo { padding: 20px 24px; border-bottom: 1px solid var(--linha); display: flex; justify-content: space-between; align-items: center; }
+.janela-topo h3 { font-size: 17px; }
+.janela-corpo { padding: 24px; }
+.janela-base { padding: 16px 24px; border-top: 1px solid var(--linha); display: flex; gap: 10px; justify-content: flex-end; }
+.fechar { background: none; border: 0; font-size: 22px; color: var(--rotulo); cursor: pointer; line-height: 1; padding: 0 4px; }
+
+/* ---------- Envio de foto ---------- */
+.envio-foto {
+  border: 2px dashed var(--linha); border-radius: var(--raio); padding: 22px;
+  text-align: center; background: var(--campo); cursor: pointer; display: block;
+}
+.envio-foto:hover { border-color: var(--laranja); background: var(--laranja-suave); }
+.envio-foto input { display: none; }
+.envio-previa { max-width: 100%; max-height: 240px; border-radius: var(--raio-p); display: block; margin: 0 auto; }
+
+/* ---------- Diversos ---------- */
+.linha-acoes { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+.entre { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+.centro { text-align: center; }
+.mini { font-size: 12.5px; color: var(--rotulo); }
+.pe-auth { text-align: center; font-size: 12.5px; color: var(--rotulo); margin-top: 20px; line-height: 1.55; }
+.carregando { padding: 48px; text-align: center; color: var(--rotulo); font-size: 14px; }
+.pilha > * + * { margin-top: 14px; }
+.zap { color: var(--verde); font-weight: 600; }
+
+/* ---------- Situacoes adicionadas na versao 2 ---------- */
+.selo-espera { background: #efe9fb; color: #5b4a99; }
+.item-retirado { opacity: .55; }
+.item-retirado .produto-nome { text-decoration: line-through; }
