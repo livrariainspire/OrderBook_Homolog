@@ -9,7 +9,6 @@
         {{ carregando ? 'Consultando...' : 'Atualizar' }}
       </button>
     </div>
-
     <div v-if="msg" class="aviso" :class="erro ? 'aviso-erro' : 'aviso-ok'">{{ msg }}</div>
     <div v-if="dados?.aviso_estoque" class="aviso aviso-erro">
       A Omie respondeu o cadastro de produtos, mas recusou a consulta de saldo:
@@ -73,7 +72,37 @@
       <div class="painel" style="margin-top:16px">
         <div class="painel-topo">
           <h2>No Order Book, mas não na Omie</h2>
+          <div v-if="dados.so_no_order_book.length" style="display:flex;gap:8px;align-items:center">
+            <label class="rotulo">Quantos enviar</label>
+            <input v-model.number="quantos" type="number" min="1" max="50"
+                   class="campo" style="max-width:90px" />
+            <button class="btn btn-principal btn-p" :disabled="enviando" @click="enviar">
+              {{ enviando ? 'Enviando...' : 'Criar na Omie' }}
+            </button>
+          </div>
         </div>
+
+        <div v-if="resultado" class="aviso"
+             :class="resultado.falhas.length ? 'aviso-erro' : 'aviso-ok'">
+          {{ resultado.criados.length }} produto(s) criado(s) na Omie.
+          <template v-if="resultado.falhas.length">
+            {{ resultado.falhas.length }} não passou(ram).
+          </template>
+        </div>
+
+        <div v-if="resultado?.falhas.length" class="tabela-rolagem" style="margin-bottom:12px">
+          <table class="lista">
+            <thead><tr><th>Código</th><th>Título</th><th>Motivo</th></tr></thead>
+            <tbody>
+              <tr v-for="(f, i) in resultado.falhas" :key="i">
+                <td><strong>{{ f.codigo || '—' }}</strong></td>
+                <td>{{ f.title }}</td>
+                <td>{{ f.motivo }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
         <TabelaVazia v-if="!dados.so_no_order_book.length" titulo="Tudo ligado"
           texto="Todo o catálogo já tem produto correspondente na Omie." />
         <div v-else class="tabela-rolagem">
@@ -98,6 +127,26 @@ const msg = ref('')
 const erro = ref(false)
 const busca = ref('')
 const dados = ref<any>(null)
+const quantos = ref(10)
+const enviando = ref(false)
+const resultado = ref<any>(null)
+
+async function enviar () {
+  if (!confirm(`Isto vai CRIAR ${quantos.value} produto(s) na sua conta da Omie. Continuar?`)) return
+  enviando.value = true
+  msg.value = ''
+  erro.value = false
+  resultado.value = null
+  try {
+    resultado.value = await chamarApi('/omie/criar-produtos', { limite: quantos.value })
+    await carregar()
+  } catch (e: any) {
+    erro.value = true
+    msg.value = e.message || 'Não foi possível criar os produtos.'
+  } finally {
+    enviando.value = false
+  }
+}
 
 const moeda = (v: any) =>
   v === null || v === undefined || v === ''
