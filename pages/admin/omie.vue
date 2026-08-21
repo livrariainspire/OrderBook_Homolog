@@ -143,6 +143,20 @@ const importando = ref(false)
 
 const ocupado = computed(() => carregando.value || importando.value)
 
+const moeda = (v: any) =>
+  v === null || v === undefined || v === ''
+    ? '—'
+    : Number(v).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
+
+const linhas = computed(() => {
+  const t = busca.value.trim().toLowerCase()
+  const todas = dados.value?.linhas ?? []
+  if (!t) return todas
+  return todas.filter((l: any) =>
+    String(l.descricao ?? '').toLowerCase().includes(t) ||
+    String(l.codigo ?? '').toLowerCase().includes(t))
+})
+
 async function importar () {
   if (!confirm('Isto traz o cadastro da Omie para o catálogo do Order Book. Produtos que não existirem mais na Omie ficarão inativos. Continuar?')) return
   importando.value = true
