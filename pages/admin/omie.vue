@@ -109,15 +109,8 @@
 
       <div class="painel" style="margin-top:16px">
         <div class="painel-topo">
-          <h2>No Order Book, mas não na Omie</h2>
-          <div v-if="dados.so_no_order_book.length" style="display:flex;gap:8px;align-items:center">
-            <label class="rotulo">Quantos enviar</label>
-            <input v-model.number="quantos" type="number" min="1" max="50"
-                   class="campo" style="max-width:90px" />
-            <button class="btn btn-principal btn-p" :disabled="enviando" @click="enviar">
-              {{ enviando ? 'Enviando...' : 'Criar na Omie' }}
-            </button>
-          </div>
+          <h2>Fora da Omie</h2>
+          <span class="rotulo">serão desativados na próxima importação</span>
         </div>
 
         <div v-if="resultado" class="aviso"
@@ -142,7 +135,7 @@
         </div>
 
         <TabelaVazia v-if="!dados.so_no_order_book.length" titulo="Tudo ligado"
-          texto="Todo o catálogo já tem produto correspondente na Omie." />
+          texto="Todo o catálogo veio da Omie." />
         <div v-else class="tabela-rolagem">
           <table class="lista">
             <thead><tr><th>Código</th><th>Título</th></tr></thead>
@@ -165,12 +158,10 @@ const msg = ref('')
 const erro = ref(false)
 const busca = ref('')
 const dados = ref<any>(null)
-const quantos = ref(10)
-const enviando = ref(false)
 const importando = ref(false)
 const resultado = ref<any>(null)
 
-const ocupado = computed(() => carregando.value || enviando.value || importando.value)
+const ocupado = computed(() => carregando.value || importando.value)
 
 async function importar () {
   if (!confirm('Isto traz o cadastro da Omie para o catálogo do Order Book. Produtos que não existirem mais na Omie ficarão inativos. Continuar?')) return
@@ -205,37 +196,6 @@ async function corrigir () {
     importando.value = false
   }
 }
-
-async function enviar () {
-  if (!confirm(`Isto vai CRIAR ${quantos.value} produto(s) na sua conta da Omie. Continuar?`)) return
-  enviando.value = true
-  msg.value = ''
-  erro.value = false
-  resultado.value = null
-  try {
-    resultado.value = await chamarApi('/omie/criar-produtos', { limite: quantos.value })
-    await carregar()
-  } catch (e: any) {
-    erro.value = true
-    msg.value = e.message || 'Não foi possível criar os produtos.'
-  } finally {
-    enviando.value = false
-  }
-}
-
-const moeda = (v: any) =>
-  v === null || v === undefined || v === ''
-    ? '—'
-    : Number(v).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
-
-const linhas = computed(() => {
-  const t = busca.value.trim().toLowerCase()
-  const todas = dados.value?.linhas ?? []
-  if (!t) return todas
-  return todas.filter((l: any) =>
-    String(l.descricao ?? '').toLowerCase().includes(t) ||
-    String(l.codigo ?? '').toLowerCase().includes(t))
-})
 
 async function carregar () {
   carregando.value = true
