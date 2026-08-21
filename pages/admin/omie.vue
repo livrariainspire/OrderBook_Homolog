@@ -47,14 +47,17 @@
           <label class="rotulo">Cliente da nota</label>
           <select v-model="clienteEscolhido" class="campo" style="max-width:520px">
             <option :value="null">— escolha o cliente na Omie —</option>
-            <option v-for="c in clientes" :key="c.codigo" :value="c.codigo">
+            <option v-for="c in clientes" :key="c.codigo" :value="c.codigo"
+                    :disabled="!c.pode_faturar">
               {{ c.nome }}<template v-if="c.documento"> · {{ c.documento }}</template>
+              <template v-if="!c.pode_faturar"> — não serve: {{ c.motivo }}</template>
             </option>
           </select>
 
           <p class="rotulo" style="margin:10px 0">
-            Use o cliente que você cadastrou para o consumidor final. Os cadastros
-            internos da Omie não servem para faturar.
+            Só aparecem habilitados os clientes que a Omie aceita faturar. Se o seu
+            estiver cinza, abra o cadastro dele na Omie e desmarque
+            "bloquear faturamento".
           </p>
 
           <div style="display:flex;gap:8px;margin-top:6px">
