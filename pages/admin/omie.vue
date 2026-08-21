@@ -71,6 +71,36 @@
 
       <div class="painel" style="margin-top:16px">
         <div class="painel-topo">
+          <h2>Disponível para enviar às filiais</h2>
+          <span class="rotulo">saldo na Omie menos o que já está nas filiais</span>
+        </div>
+        <TabelaVazia v-if="!dados.quadro?.length" titulo="Nenhum produto ligado"
+          texto="Ligue os produtos à Omie para acompanhar o disponível." />
+        <div v-else class="tabela-rolagem">
+          <table class="lista">
+            <thead>
+              <tr><th>Código</th><th>Título</th><th>Na Omie</th>
+                  <th>Nas filiais</th><th>Disponível</th></tr>
+            </thead>
+            <tbody>
+              <tr v-for="q in dados.quadro" :key="q.product_id">
+                <td><strong>{{ q.codigo }}</strong></td>
+                <td>{{ q.titulo }}</td>
+                <td>{{ q.saldo_omie }}</td>
+                <td>{{ q.alocado }}</td>
+                <td>
+                  <span class="selo" :class="Number(q.disponivel) > 0 ? 'selo-enviado' : 'selo-neutro'">
+                    {{ q.disponivel }}
+                  </span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="painel" style="margin-top:16px">
+        <div class="painel-topo">
           <h2>No Order Book, mas não na Omie</h2>
           <div v-if="dados.so_no_order_book.length" style="display:flex;gap:8px;align-items:center">
             <label class="rotulo">Quantos enviar</label>
