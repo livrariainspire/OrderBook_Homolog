@@ -12,8 +12,15 @@
 
     <div v-else class="painel">
       <div class="painel-topo">
-        <h2>{{ lista.length }} produto(s)</h2>
-        <input v-model="busca" class="campo" style="max-width:280px" type="search" placeholder="Buscar no catálogo" />
+        <h2>{{ filtrados.length }} produto(s)</h2>
+        <div style="display:flex;gap:8px">
+          <select v-model="situacao" class="campo" style="max-width:150px">
+            <option value="ativos">Ativos</option>
+            <option value="inativos">Inativos</option>
+            <option value="todos">Todos</option>
+          </select>
+          <input v-model="busca" class="campo" style="max-width:260px" type="search" placeholder="Buscar no catálogo" />
+        </div>
       </div>
       <TabelaVazia v-if="!filtrados.length" titulo="Catálogo vazio"
         texto="Cadastre os produtos na Omie e use Importar da Omie." />
@@ -121,14 +128,21 @@ const msg = ref(''); const erro = ref(false)
 
 const rotuloVis = (v: string) => ({ ambos: 'Todos', igreja: 'Igrejas da Rede', ponto: 'Pontos de Partida' }[v] ?? v)
 
+const situacao = ref('ativos')
+
 const filtrados = computed(() => {
   const t = busca.value.trim().toLowerCase()
-  if (!t) return lista.value
-  return lista.value.filter(p => (p.search_text || '').includes(t))
+  let base = lista.value
+  if (situacao.value === 'ativos') base = base.filter(p => p.active)
+  if (situacao.value === 'inativos') base = base.filter(p => !p.active)
+  if (!t) return base
+  return base.filter(p => (p.search_text || '').includes(t))
 })
 
 async function carregar() {
-  const { data } = await supa.from('products').select('*').order('title')
+  // O catalogo e o que existe na Omie. Produto sem ligacao nao aparece.
+  const { data } = await supa.from('products')
+    .select('*').not('omie_id', 'is', null).order('title')
   lista.value = data ?? []
   carregando.value = false
 }
