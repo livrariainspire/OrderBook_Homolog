@@ -60,9 +60,12 @@
             "bloquear faturamento".
           </p>
 
-          <div style="display:flex;gap:8px;margin-top:6px">
+          <div style="display:flex;gap:8px;margin-top:6px;flex-wrap:wrap">
             <button class="btn btn-neutro btn-p" :disabled="carregandoCfg" @click="carregarClientes">
               {{ carregandoCfg ? 'Buscando...' : 'Buscar clientes na Omie' }}
+            </button>
+            <button class="btn btn-neutro btn-p" :disabled="criandoCliente" @click="criarCliente">
+              {{ criandoCliente ? 'Criando...' : 'Criar cliente de balcão' }}
             </button>
             <button class="btn btn-principal btn-p" :disabled="!clienteEscolhido || salvandoCfg"
               @click="salvarConfig">
@@ -195,6 +198,28 @@ const clientes = ref<any[]>([])
 const clienteEscolhido = ref<any>(null)
 const carregandoCfg = ref(false)
 const salvandoCfg = ref(false)
+const criandoCliente = ref(false)
+
+async function criarCliente () {
+  criandoCliente.value = true
+  msgCfg.value = ''
+  erroCfg.value = false
+  try {
+    const r = await chamarApi('/omie/criar-cliente')
+    clienteEscolhido.value = r.codigo
+    msgCfg.value = (r.ja_existia ? 'Cliente já existia e foi reaproveitado. ' : 'Cliente criado na Omie. ')
+      + `${r.envio?.enviadas?.length ?? 0} venda(s) enviada(s).`
+      + (r.envio?.falhas?.length ? ` ${r.envio.falhas.length} ainda com erro.` : '')
+    await carregarVendas()
+    await carregarEstoque()
+    await carregarClientes()
+  } catch (e: any) {
+    erroCfg.value = true
+    msgCfg.value = e.message || 'Não foi possível criar o cliente.'
+  } finally {
+    criandoCliente.value = false
+  }
+}
 const msgCfg = ref('')
 const erroCfg = ref(false)
 
