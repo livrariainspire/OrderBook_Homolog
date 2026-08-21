@@ -70,6 +70,40 @@
         </div>
       </div>
 
+      <div class="painel" style="margin-top:16px">
+        <div class="painel-topo">
+          <h2>Vendas enviadas à Omie</h2>
+          <button class="btn btn-neutro btn-p" :disabled="ocupado" @click="enviarVendas">
+            {{ enviandoVendas ? 'Enviando...' : 'Enviar pendentes' }}
+          </button>
+        </div>
+
+        <TabelaVazia v-if="!vendas.length" titulo="Nenhuma venda"
+          texto="As vendas registradas pelas filiais aparecem aqui." />
+
+        <div v-else class="tabela-rolagem">
+          <table class="lista">
+            <thead>
+              <tr><th>Venda</th><th>Filial</th><th>Total</th>
+                  <th>Situação</th><th>Observação</th></tr>
+            </thead>
+            <tbody>
+              <tr v-for="v in vendas" :key="v.id">
+                <td><strong>{{ v.code || '—' }}</strong></td>
+                <td>{{ v.unit_name }}</td>
+                <td>{{ moeda(v.total) }}</td>
+                <td>
+                  <span class="selo" :class="v.omie_status === 'faturado' ? 'selo-enviado'
+                        : v.omie_status === 'erro' ? 'selo-cancelado' : 'selo-neutro'">
+                    {{ v.omie_status }}
+                  </span>
+                </td>
+                <td>{{ v.omie_erro || (v.omie_numero ? 'Pedido ' + v.omie_numero : '—') }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
     </template>
   </div>
 </template>
@@ -83,8 +117,32 @@ const erro = ref(false)
 const busca = ref('')
 const dados = ref<any>(null)
 const importando = ref(false)
+const enviandoVendas = ref(false)
+const vendas = ref<any[]>([])
 
-const ocupado = computed(() => carregando.value || importando.value)
+async function carregarVendas () {
+  const { data } = await useSupa().rpc('fn_omie_vendas')
+  vendas.value = data ?? []
+}
+
+async function enviarVendas () {
+  enviandoVendas.value = true
+  msg.value = ''
+  erro.value = false
+  try {
+    const r = await chamarApi('/omie/enviar-vendas')
+    msg.value = `${r.enviadas.length} venda(s) enviada(s).`
+      + (r.falhas.length ? ` ${r.falhas.length} com erro.` : '')
+    await carregarVendas()
+  } catch (e: any) {
+    erro.value = true
+    msg.value = e.message || 'Não foi possível enviar as vendas.'
+  } finally {
+    enviandoVendas.value = false
+  }
+}
+
+const ocupado = computed(() => carregando.value || importando.value || enviandoVendas.value)
 
 const moeda = (v: any) =>
   v === null || v === undefined || v === ''
@@ -131,5 +189,5 @@ async function carregar () {
   }
 }
 
-onMounted(carregar)
+onMounted(() => { carregar(); carregarVendas() })
 </script>
