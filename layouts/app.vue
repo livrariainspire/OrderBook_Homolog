@@ -41,6 +41,7 @@ const links = computed(() => {
     { nome: 'Filiais', para: '/admin/filiais' },
     { nome: 'Usuários', para: '/admin/usuarios' },
     { nome: 'Relatórios', para: '/relatorios' },
+    { nome: 'Omie', para: '/admin/omie' },
     { nome: 'Registros', para: '/admin/registros' }
   ]
   if (r === 'atendente') return [
