@@ -222,6 +222,8 @@ async function enviar () {
     })
     if (error) throw error
     cobranca.value = data
+    // Leva direto para a maquininha, com o codigo ja preenchido
+    await navigateTo({ path: '/maquininha', query: { codigo: data.code } })
   } catch (e) {
     erro.value = e.message || 'Não foi possível criar a cobrança.'
   } finally {

@@ -34,6 +34,41 @@
         </div>
       </div>
 
+      <div class="painel" style="margin-bottom:16px">
+        <div class="painel-topo">
+          <h2>Configuração da venda</h2>
+          <span class="rotulo">contra quem a nota é emitida</span>
+        </div>
+        <div class="painel-corpo">
+          <div v-if="msgCfg" class="aviso" :class="erroCfg ? 'aviso-erro' : 'aviso-ok'">
+            {{ msgCfg }}
+          </div>
+
+          <label class="rotulo">Cliente da nota</label>
+          <select v-model="clienteEscolhido" class="campo" style="max-width:520px">
+            <option :value="null">— escolha o cliente na Omie —</option>
+            <option v-for="c in clientes" :key="c.codigo" :value="c.codigo">
+              {{ c.nome }}<template v-if="c.documento"> · {{ c.documento }}</template>
+            </option>
+          </select>
+
+          <p class="rotulo" style="margin:10px 0">
+            Use o cliente que você cadastrou para o consumidor final. Os cadastros
+            internos da Omie não servem para faturar.
+          </p>
+
+          <div style="display:flex;gap:8px;margin-top:6px">
+            <button class="btn btn-neutro btn-p" :disabled="carregandoCfg" @click="carregarClientes">
+              {{ carregandoCfg ? 'Buscando...' : 'Buscar clientes na Omie' }}
+            </button>
+            <button class="btn btn-principal btn-p" :disabled="!clienteEscolhido || salvandoCfg"
+              @click="salvarConfig">
+              {{ salvandoCfg ? 'Salvando...' : 'Salvar' }}
+            </button>
+          </div>
+        </div>
+      </div>
+
       <div class="painel">
         <div class="painel-topo">
           <h2>Estoque na Omie</h2>
@@ -153,6 +188,58 @@ const dados = ref<any>(null)
 const importando = ref(false)
 const vendas = ref<any[]>([])
 const estoque = ref<any[]>([])
+const clientes = ref<any[]>([])
+const clienteEscolhido = ref<any>(null)
+const carregandoCfg = ref(false)
+const salvandoCfg = ref(false)
+const msgCfg = ref('')
+const erroCfg = ref(false)
+
+async function carregarConfig () {
+  try {
+    const r = await chamarApi('/omie/config')
+    clienteEscolhido.value = r.config?.codigo_cliente ?? null
+  } catch { /* segue sem configuracao */ }
+}
+
+async function carregarClientes () {
+  carregandoCfg.value = true
+  msgCfg.value = ''
+  erroCfg.value = false
+  try {
+    const r = await chamarApi('/omie/clientes')
+    clientes.value = r.clientes ?? []
+    if (!clientes.value.length) {
+      erroCfg.value = true
+      msgCfg.value = 'Nenhum cliente encontrado na Omie.'
+    }
+  } catch (e: any) {
+    erroCfg.value = true
+    msgCfg.value = e.message || 'Não foi possível buscar os clientes.'
+  } finally {
+    carregandoCfg.value = false
+  }
+}
+
+async function salvarConfig () {
+  salvandoCfg.value = true
+  msgCfg.value = ''
+  erroCfg.value = false
+  try {
+    await chamarApi('/omie/config', { codigo_cliente: clienteEscolhido.value })
+    // Reaproveita a rota manual para tentar de novo as que falharam
+    const r = await chamarApi('/omie/enviar-vendas')
+    msgCfg.value = `Cliente salvo. ${r.enviadas.length} venda(s) enviada(s) agora.`
+      + (r.falhas.length ? ` ${r.falhas.length} ainda com erro.` : '')
+    await carregarVendas()
+    await carregarEstoque()
+  } catch (e: any) {
+    erroCfg.value = true
+    msgCfg.value = e.message || 'Não foi possível salvar.'
+  } finally {
+    salvandoCfg.value = false
+  }
+}
 
 async function carregarEstoque () {
   const { data } = await useSupa().rpc('fn_estoque_geral')
@@ -213,5 +300,5 @@ async function carregar () {
   }
 }
 
-onMounted(() => { carregar(); carregarVendas(); carregarEstoque() })
+onMounted(() => { carregar(); carregarVendas(); carregarEstoque(); carregarConfig() })
 </script>
