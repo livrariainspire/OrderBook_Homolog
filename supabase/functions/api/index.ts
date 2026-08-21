@@ -2,13 +2,13 @@
 //  LIVRARIA INSPIRE — ORDER BOOK
 //  Edge Function: "api"  ·  Versao 3.0
 //
-//  1) CÓDIGOS DE E-MAIL (rotas públicas)
-//     Gera um código de 6 dígitos, guarda no banco e envia pela API do
-//     Brevo. Usado no cadastro e na recuperação de senha.
-//     O Supabase não envia nenhum e-mail.
+//  1) CODIGOS DE E-MAIL (rotas publicas)
+//     Gera um codigo de 6 digitos, guarda no banco e envia pela API do
+//     Brevo. Usado no cadastro e na recuperacao de senha.
+//     O Supabase nao envia nenhum e-mail.
 //
-//  2) ADMINISTRAÇÃO DE CONTAS (rotas protegidas)
-//     Criar usuário, trocar senha de qualquer pessoa, excluir conta.
+//  2) ADMINISTRACAO DE CONTAS (rotas protegidas)
+//     Criar usuario, trocar senha de qualquer pessoa, excluir conta.
 //
 //  Segredos necessarios em Edge Functions > Secrets:
 //     BREVO_API_KEY      chave v3 da API do Brevo
@@ -86,11 +86,11 @@ function corpoEmail(codigo: string, finalidade: string) {
     + '<p style="margin:0 0 4px;font-size:12px;letter-spacing:2px;text-transform:uppercase;color:#a08e86">Livraria Inspire</p>'
     + '<h1 style="margin:0 0 18px;font-size:22px;color:#2c2320">' + titulo + '</h1>'
     + '<p style="margin:0 0 22px;font-size:15px;line-height:1.6;color:#6f5d55">' + frase + '</p>'
-    + '<p style="margin:0 0 8px;font-size:13px;color:#6f5d55">Seu código:</p>'
+    + '<p style="margin:0 0 8px;font-size:13px;color:#6f5d55">Seu codigo:</p>'
     + '<div style="background:#fdece6;border-radius:12px;padding:18px;text-align:center;margin-bottom:22px">'
     + '<span style="font-size:34px;font-weight:bold;letter-spacing:10px;color:#d9451d">' + código + '</span></div>'
-    + '<p style="margin:0 0 6px;font-size:14px;line-height:1.6;color:#6f5d55">Digite esse código na tela do sistema para continuar. Ele vale por ' + VALIDADE_MIN + ' minutos.</p>'
-    + '<p style="margin:0;font-size:13px;line-height:1.6;color:#a08e86">Se não foi você quem pediu, pode ignorar esta mensagem.</p>'
+    + '<p style="margin:0 0 6px;font-size:14px;line-height:1.6;color:#6f5d55">Digite esse codigo na tela do sistema para continuar. Ele vale por ' + VALIDADE_MIN + ' minutos.</p>'
+    + '<p style="margin:0;font-size:13px;line-height:1.6;color:#a08e86">Se nao foi voce quem pediu, pode ignorar esta mensagem.</p>'
     + '</td></tr></table>'
     + '<p style="margin:20px 0 0;font-size:12px;color:#a08e86">Order Book &middot; Livraria Inspire</p>'
     + '</td></tr></table></body></html>';
@@ -112,8 +112,8 @@ async function enviarBrevo(email: string, codigo: string, finalidade: string) {
       sender: { name: BREVO_NAME, email: BREVO_SENDER },
       to: [{ email }],
       subject: finalidade === "cadastro"
-        ? codigo + " é o seu código de confirmação"
-        : codigo + " é o seu código para criar uma nova senha",
+        ? codigo + " e o seu código de confirmação"
+        : codigo + " e o seu código para criar uma nova senha",
       htmlContent: corpoEmail(codigo, finalidade),
     }),
   });
@@ -125,7 +125,7 @@ async function enviarBrevo(email: string, codigo: string, finalidade: string) {
 }
 
 // ---------------------------------------------------------------------
-// Códigos
+// Codigos
 // ---------------------------------------------------------------------
 async function criarEEnviarCodigo(email: string, finalidade: string) {
   const desde = new Date(Date.now() - 3600000).toISOString();
@@ -134,7 +134,7 @@ async function criarEEnviarCodigo(email: string, finalidade: string) {
     .eq("email", email).eq("purpose", finalidade).gte("created_at", desde);
 
   if ((count ?? 0) >= MAX_ENVIOS_HORA) {
-    throw new Error("Você pediu códigos demais na última hora. Aguarde um pouco e tente de novo.");
+    throw new Error("Você pediu codigos demais na última hora. Aguarde um pouco e tente de novo.");
   }
 
   await admin.from("email_codes")
@@ -180,131 +180,6 @@ async function conferirCodigo(email: string, codigo: unknown, finalidade: string
 
   await admin.from("email_codes").update({ used_at: new Date().toISOString() }).eq("id", reg.id);
   return null;
-}
-
-
-// ---------------------------------------------------------------------
-// OMIE — processa a fila de pedidos de venda
-//
-// Em modo simulação nada sai daqui: o sistema grava o que teria sido
-// enviado, para você conferir o formato. Ao preencher as chaves da
-// Omie e desligar a simulação, o mesmo código passa a enviar de verdade.
-// ---------------------------------------------------------------------
-const OMIE_URL = "https://app.omie.com.br/api/v1/produtos/pedido/";
-
-async function lerConfig(): Promise<Record<string, string | null>> {
-  const { data } = await admin.from("settings").select("key, value");
-  const cfg: Record<string, string | null> = {};
-  (data ?? []).forEach((r: any) => { cfg[r.key] = r.value; });
-  return cfg;
-}
-
-/** Monta o corpo do Pedido de Venda no formato que a Omie espera. */
-function montarPedidoOmie(p: any, cfg: Record<string, string | null>) {
-  const det = (p.itens ?? []).map((i: any, n: number) => ({
-    ide: { codigo_item_integracao: String(n + 1) },
-    produto: {
-      codigo_produto: i.produto?.codigo_produto_omie ?? undefined,
-      descricao: i.produto?.descricao,
-      quantidade: Number(i.produto?.quantidade ?? 0),
-      valor_unitario: Number(i.produto?.valor_unitario ?? 0),
-    },
-  }));
-
-  return {
-    cabecalho: {
-      codigo_pedido_integracao: p.codigo_pedido_integracao,
-      codigo_cliente: p.codigo_cliente_omie ? Number(p.codigo_cliente_omie) : undefined,
-      data_previsao: p.data_previsao,
-      etapa: p.etapa ?? "10",
-      codigo_parcela: p.parcelas && p.parcelas > 1 ? "999" : "000",
-      quantidade_itens: det.length,
-    },
-    det,
-    informacoes_adicionais: {
-      codigo_categoria: p.codigo_categoria ?? undefined,
-      codigo_conta_corrente: p.codigo_conta_corrente ? Number(p.codigo_conta_corrente) : undefined,
-      consumidor_final: "S",
-      enviar_email: "N",
-      utilizar_emails: undefined,
-    },
-    frete: { modalidade: "9" },
-    observacoes: {
-      obs_venda: `${p.filial ?? ""} · ${p.forma_pagamento ?? ""}`.trim(),
-    },
-  };
-}
-
-async function processarFilaOmie(limite = 20) {
-  const cfg = await lerConfig();
-  const simulado = (cfg["modo_simulacao"] ?? "true") === "true";
-  const appKey = cfg["omie_app_key"] ?? "";
-  const appSecret = cfg["omie_app_secret"] ?? "";
-
-  const { data: fila } = await admin
-    .from("omie_queue").select("*")
-    .eq("status", "pendente")
-    .order("created_at")
-    .limit(limite);
-
-  const resultado: any[] = [];
-
-  for (const item of fila ?? []) {
-    const corpo = montarPedidoOmie(item.payload, cfg);
-
-    // ---- modo simulação: registra o que seria enviado ----
-    if (simulado || !appKey || !appSecret) {
-      await admin.rpc("fn_omie_marcar", {
-        p_id: item.id,
-        p_status: "simulado",
-        p_resposta: {
-          simulado: true,
-          motivo: simulado ? "Modo simulação ligado" : "Chaves da Omie não preenchidas",
-          endereco: OMIE_URL,
-          enviaria: { call: "IncluirPedido", app_key: "***", app_secret: "***", param: [corpo] },
-        },
-        p_erro: null,
-      });
-      resultado.push({ id: item.id, status: "simulado" });
-      continue;
-    }
-
-    // ---- envio de verdade ----
-    try {
-      const resp = await fetch(OMIE_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          call: "IncluirPedido",
-          app_key: appKey,
-          app_secret: appSecret,
-          param: [corpo],
-        }),
-      });
-      const dados = await resp.json().catch(() => ({}));
-
-      if (!resp.ok || dados.faultstring) {
-        await admin.rpc("fn_omie_marcar", {
-          p_id: item.id, p_status: "erro", p_resposta: dados,
-          p_erro: dados.faultstring ?? ("A Omie respondeu " + resp.status),
-        });
-        resultado.push({ id: item.id, status: "erro", erro: dados.faultstring });
-      } else {
-        await admin.rpc("fn_omie_marcar", {
-          p_id: item.id, p_status: "enviado", p_resposta: dados, p_erro: null,
-        });
-        resultado.push({ id: item.id, status: "enviado" });
-      }
-    } catch (e) {
-      await admin.rpc("fn_omie_marcar", {
-        p_id: item.id, p_status: "erro", p_resposta: null,
-        p_erro: String((e as Error).message ?? e),
-      });
-      resultado.push({ id: item.id, status: "erro" });
-    }
-  }
-
-  return { processados: resultado.length, simulado, itens: resultado };
 }
 
 // ---------------------------------------------------------------------
@@ -357,7 +232,7 @@ Deno.serve(async (req) => {
       const email = normalizaEmail(corpo.email);
       if (!emailValido(email)) return json({ error: "Informe um e-mail válido." }, 400);
       if (await perfilPorEmail(email)) {
-        return json({ error: 'Este e-mail já tem cadastro. Use "Esqueci minha senha".' }, 400);
+        return json({ error: 'Este e-mail ja tem cadastro. Use "Esqueci minha senha".' }, 400);
       }
       await criarEEnviarCodigo(email, "cadastro");
       return json({ ok: true });
@@ -370,7 +245,7 @@ Deno.serve(async (req) => {
       if (!emailValido(email)) return json({ error: "Informe um e-mail válido." }, 400);
       if (!full_name || String(full_name).trim().length < 3) return json({ error: "Informe seu nome completo." }, 400);
       if (!password || String(password).length < 8) return json({ error: "A senha precisa ter ao menos 8 caracteres." }, 400);
-      if (await perfilPorEmail(email)) return json({ error: "Este e-mail já tem cadastro." }, 400);
+      if (await perfilPorEmail(email)) return json({ error: "Este e-mail ja tem cadastro." }, 400);
 
       const problema = await conferirCodigo(email, code, "cadastro");
       if (problema) return json({ error: problema }, 400);
@@ -388,7 +263,7 @@ Deno.serve(async (req) => {
     if (rota === "/senha/codigo") {
       const email = normalizaEmail(corpo.email);
       if (!emailValido(email)) return json({ error: "Informe um e-mail válido." }, 400);
-      // resposta igual exista ou não a conta, para não revelar cadastros
+      // resposta igual exista ou nao a conta, para nao revelar cadastros
       if (await perfilPorEmail(email)) await criarEEnviarCodigo(email, "recuperacao");
       return json({ ok: true });
     }
@@ -414,42 +289,12 @@ Deno.serve(async (req) => {
       return json({ ok: true });
     }
 
-    // ---------- ROTAS DA ADMINISTRAÇÃO ----------
+    // ---------- ROTAS DA ADMINISTRACAO ----------
     const guarda = await exigirAdmin(req);
     if ("error" in guarda) return json({ error: (guarda as any).error }, 403);
     const { user, perfil } = guarda as any;
 
     switch (rota) {
-      // ---------------------------------------------------------------
-      // Processa a fila da Omie (simulado ou real)
-      // ---------------------------------------------------------------
-      case "/omie/processar": {
-        const r = await processarFilaOmie(Number(corpo.limite ?? 20));
-        return json({ ok: true, ...r });
-      }
-
-      // Testa as chaves da Omie sem gravar nada
-      case "/omie/testar": {
-        const cfg = await lerConfig();
-        const appKey = cfg["omie_app_key"] ?? "";
-        const appSecret = cfg["omie_app_secret"] ?? "";
-        if (!appKey || !appSecret) {
-          return json({ ok: false, mensagem: "As chaves da Omie ainda não foram preenchidas." });
-        }
-        const resp = await fetch("https://app.omie.com.br/api/v1/geral/clientes/", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            call: "ListarClientes", app_key: appKey, app_secret: appSecret,
-            param: [{ pagina: 1, registros_por_pagina: 1, apenas_importado_api: "N" }],
-          }),
-        });
-        const dados = await resp.json().catch(() => ({}));
-        if (dados.faultstring) return json({ ok: false, mensagem: dados.faultstring });
-        return json({ ok: true, mensagem: "Conexão com a Omie funcionando.",
-                      clientes: dados.total_de_registros ?? null });
-      }
-
       case "/create-user": {
         const { password, full_name, whatsapp, role, unit_id } = corpo;
         const alvo = normalizaEmail(corpo.email);

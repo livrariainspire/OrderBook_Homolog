@@ -39,7 +39,7 @@
           <div v-if="p.summary" class="produto-resumo">{{ resumoCurto(p.summary) }}</div>
         </div>
         <button class="btn btn-contorno btn-p" :disabled="escolhidos.includes(p.id)" @click="$emit('escolher', p)">
-          {{ escolhidos.includes(p.id) ? 'Já incluído' : 'Adicionar' }}
+          {{ escolhidos.includes(p.id) ? 'Ja incluido' : 'Adicionar' }}
         </button>
       </div>
     </div>

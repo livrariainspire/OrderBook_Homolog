@@ -38,7 +38,7 @@
             </div>
           </div>
           <button class="btn btn-principal" :disabled="ocupado" style="margin-top:6px">
-            {{ ocupado ? 'Enviando código...' : 'Enviar código por e-mail' }}
+            {{ ocupado ? 'Enviando codigo...' : 'Enviar codigo por e-mail' }}
           </button>
         </form>
 
@@ -72,7 +72,7 @@
 
         <div class="linha-acoes" style="justify-content:center;margin-top:18px;gap:22px">
           <button class="btn-linha" :disabled="espera > 0 || ocupado" @click="reenviar">
-            {{ espera > 0 ? `Reenviar em ${espera}s` : 'Reenviar código' }}
+            {{ espera > 0 ? `Reenviar em ${espera}s` : 'Reenviar codigo' }}
           </button>
           <button class="btn-linha" @click="voltar">Corrigir o e-mail</button>
         </div>

@@ -21,7 +21,7 @@
         texto="Cadastre a primeira igreja ou ponto de partida." />
       <div v-else class="tabela-rolagem">
         <table class="lista">
-          <thead><tr><th>Nome</th><th>Tipo</th><th>Responsável</th><th>Contato</th><th>Cidade</th><th>Maquininhas</th><th>Situação</th><th></th></tr></thead>
+          <thead><tr><th>Nome</th><th>Tipo</th><th>Responsável</th><th>Contato</th><th>Cidade</th><th>Situação</th><th></th></tr></thead>
           <tbody>
             <tr v-for="u in filtradas" :key="u.id">
               <td><strong>{{ u.name }}</strong></td>
@@ -32,10 +32,6 @@
                 <span v-else>—</span>
               </td>
               <td>{{ [u.city, u.state].filter(Boolean).join('/') || '—' }}</td>
-              <td>
-                <span v-if="contaMaquinas(u.id)" class="selo selo-neutro">{{ contaMaquinas(u.id) }}</span>
-                <span v-else class="mini">nenhuma</span>
-              </td>
               <td><span class="selo" :class="u.active ? 'selo-enviado' : 'selo-neutro'">{{ u.active ? 'Ativa' : 'Inativa' }}</span></td>
               <td><button class="btn btn-neutro btn-p" @click="editar(u)">Editar</button></td>
             </tr>
@@ -80,65 +76,10 @@
         <label class="rotulo">Endereço</label>
         <input v-model="form.address" class="campo" />
       </div>
-      <div class="grade-2">
-        <div class="grupo">
-          <label class="rotulo">CNPJ (opcional)</label>
-          <input v-model="form.cnpj" class="campo" placeholder="00.000.000/0001-00" />
-        </div>
-        <div class="grupo">
-          <label class="rotulo">Código do cliente na Omie (opcional)</label>
-          <input v-model="form.omie_client_id" class="campo" placeholder="Deixe vazio se ainda não souber" />
-        </div>
-      </div>
       <label class="linha-acoes" style="gap:8px;cursor:pointer">
         <input v-model="form.active" type="checkbox" />
         <span style="font-size:14px">Filial ativa</span>
       </label>
-
-      <template v-if="form.id">
-        <hr class="divisor" />
-        <h4 style="font-size:14px;margin-bottom:6px">Maquininhas desta filial</h4>
-        <p class="mini" style="margin-bottom:14px">
-          O número de série fica embaixo da maquininha ou no menu de informações dela.
-          É por ele que a cobrança chega na máquina certa.
-        </p>
-
-        <div v-if="erroMaquina" class="aviso aviso-erro">{{ erroMaquina }}</div>
-
-        <div v-for="m in maquinas" :key="m.id" class="carrinho-item">
-          <div class="cresce">
-            <div class="produto-nome">{{ m.serial }}</div>
-            <div class="produto-meta">{{ m.nickname || 'Sem apelido' }}</div>
-          </div>
-          <span class="selo" :class="m.active ? 'selo-enviado' : 'selo-neutro'">
-            {{ m.active ? 'Ativa' : 'Inativa' }}
-          </span>
-          <button class="btn-linha" @click="alternarMaquina(m)">
-            {{ m.active ? 'Desativar' : 'Ativar' }}
-          </button>
-          <button class="btn-linha" style="color:var(--vermelho)" @click="excluirMaquina(m)">Excluir</button>
-        </div>
-
-        <p v-if="!maquinas.length" class="mini" style="margin-bottom:14px">
-          Nenhuma maquininha cadastrada nesta filial.
-        </p>
-
-        <div class="grade-2" style="margin-top:14px">
-          <div class="grupo">
-            <label class="rotulo">Número de série</label>
-            <input v-model="novaMaquina.serial" class="campo" placeholder="Ex.: 6C582505"
-                   @keyup.enter="salvarMaquina" />
-          </div>
-          <div class="grupo">
-            <label class="rotulo">Apelido (opcional)</label>
-            <input v-model="novaMaquina.nickname" class="campo" placeholder="Ex.: Balcão da frente"
-                   @keyup.enter="salvarMaquina" />
-          </div>
-        </div>
-        <button class="btn btn-contorno btn-p" style="width:auto" :disabled="ocupado" @click="salvarMaquina">
-          Adicionar maquininha
-        </button>
-      </template>
       <template #acoes>
         <button v-if="form.id" class="btn btn-perigo btn-p" style="margin-right:auto" :disabled="ocupado" @click="excluir">
           Excluir filial
@@ -159,85 +100,19 @@ const carregando = ref(true)
 const filtro = ref('')
 const form = ref<any>(null)
 const ocupado = ref(false)
-const maquinas = ref<any[]>([])
-const todasMaquinas = ref<any[]>([])
-const novaMaquina = ref<any>({ serial: '', nickname: '' })
-const erroMaquina = ref('')
 const msg = ref(''); const erro = ref(false)
 
 const filtradas = computed(() => filtro.value ? lista.value.filter(u => u.type === filtro.value) : lista.value)
 
 async function carregar() {
-  const [u, d] = await Promise.all([
-    supa.from('units').select('*').order('name'),
-    supa.from('unit_devices').select('*').order('serial')
-  ])
-  lista.value = u.data ?? []
-  todasMaquinas.value = d.data ?? []
+  const { data } = await supa.from('units').select('*').order('name')
+  lista.value = data ?? []
   carregando.value = false
-}
-
-const contaMaquinas = (id: string) =>
-  todasMaquinas.value.filter(m => m.unit_id === id && m.active).length
-
-async function carregarMaquinas() {
-  if (!form.value?.id) { maquinas.value = []; return }
-  const { data } = await supa.from('unit_devices').select('*')
-    .eq('unit_id', form.value.id).order('serial')
-  maquinas.value = data ?? []
-}
-
-async function salvarMaquina() {
-  erroMaquina.value = ''
-  if (!novaMaquina.value.serial?.trim()) {
-    erroMaquina.value = 'Informe o número de série da maquininha.'; return
-  }
-  ocupado.value = true
-  const { error } = await supa.rpc('fn_save_device', {
-    p_id: null,
-    p_unit: form.value.id,
-    p_serial: novaMaquina.value.serial,
-    p_nickname: novaMaquina.value.nickname || null,
-    p_active: true,
-    p_note: null
-  })
-  ocupado.value = false
-  if (error) { erroMaquina.value = error.message; return }
-  novaMaquina.value = { serial: '', nickname: '' }
-  await carregarMaquinas(); await carregar()
-}
-
-async function alternarMaquina(m: any) {
-  erroMaquina.value = ''
-  const { error } = await supa.rpc('fn_save_device', {
-    p_id: m.id, p_unit: m.unit_id, p_serial: m.serial,
-    p_nickname: m.nickname, p_active: !m.active, p_note: m.note
-  })
-  if (error) { erroMaquina.value = error.message; return }
-  await carregarMaquinas(); await carregar()
-}
-
-async function excluirMaquina(m: any) {
-  if (!confirm(`Excluir a maquininha ${m.serial}?`)) return
-  erroMaquina.value = ''
-  const { error } = await supa.rpc('fn_delete_device', { p_id: m.id })
-  if (error) { erroMaquina.value = error.message; return }
-  await carregarMaquinas(); await carregar()
 }
 onMounted(carregar)
 
-function abrirNova() {
-  erroMaquina.value = ''; maquinas.value = []
-  novaMaquina.value = { serial: '', nickname: '' }
-  form.value = { name: '', type: 'igreja', responsible: '', phone: '', city: '', state: '', address: '', active: true }
-}
-
-function editar(u: any) {
-  erroMaquina.value = ''
-  novaMaquina.value = { serial: '', nickname: '' }
-  form.value = { ...u }
-  carregarMaquinas()
-}
+function abrirNova() { form.value = { name: '', type: 'igreja', responsible: '', phone: '', city: '', state: '', address: '', active: true } }
+function editar(u: any) { form.value = { ...u } }
 
 async function excluir() {
   if (!confirm(`Excluir a filial "${form.value.name}"? Não dá para desfazer.`)) return
