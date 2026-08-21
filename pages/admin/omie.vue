@@ -113,27 +113,6 @@
           <span class="rotulo">serão desativados na próxima importação</span>
         </div>
 
-        <div v-if="resultado" class="aviso"
-             :class="resultado.falhas.length ? 'aviso-erro' : 'aviso-ok'">
-          {{ resultado.criados.length }} produto(s) criado(s) na Omie.
-          <template v-if="resultado.falhas.length">
-            {{ resultado.falhas.length }} não passou(ram).
-          </template>
-        </div>
-
-        <div v-if="resultado?.falhas.length" class="tabela-rolagem" style="margin-bottom:12px">
-          <table class="lista">
-            <thead><tr><th>Código</th><th>Título</th><th>Motivo</th></tr></thead>
-            <tbody>
-              <tr v-for="(f, i) in resultado.falhas" :key="i">
-                <td><strong>{{ f.codigo || '—' }}</strong></td>
-                <td>{{ f.title }}</td>
-                <td>{{ f.motivo }}</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-
         <TabelaVazia v-if="!dados.so_no_order_book.length" titulo="Tudo ligado"
           texto="Todo o catálogo veio da Omie." />
         <div v-else class="tabela-rolagem">
@@ -153,13 +132,14 @@
 </template>
 
 <script setup lang="ts">
+definePageMeta({ layout: 'app' })
+
 const carregando = ref(false)
 const msg = ref('')
 const erro = ref(false)
 const busca = ref('')
 const dados = ref<any>(null)
 const importando = ref(false)
-const resultado = ref<any>(null)
 
 const ocupado = computed(() => carregando.value || importando.value)
 
