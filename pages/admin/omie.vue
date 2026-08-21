@@ -3,14 +3,11 @@
     <div class="cabecalho">
       <div>
         <h1>Omie</h1>
-        <p>Estoque da livraria na Omie e ligação com o catálogo do Order Book.</p>
+        <p>O catálogo vem da Omie sozinho, a cada 10 minutos. Aqui você acompanha o estoque.</p>
       </div>
       <div style="display:flex;gap:8px">
         <button class="btn btn-neutro btn-p" :disabled="ocupado" @click="corrigir">
           Corrigir descrições
-        </button>
-        <button class="btn btn-neutro btn-p" :disabled="ocupado" @click="importar">
-          {{ importando ? 'Importando...' : 'Importar da Omie' }}
         </button>
         <button class="btn btn-principal btn-p" :disabled="ocupado" @click="carregar">
           {{ carregando ? 'Consultando...' : 'Atualizar' }}
@@ -26,7 +23,7 @@
     <div v-if="carregando" class="carregando">Consultando a Omie...</div>
 
     <template v-else-if="dados">
-      <div class="grade-3" style="margin-bottom:16px">
+      <div class="grade-2" style="margin-bottom:16px">
         <div class="cartao">
           <span class="rotulo">Produtos na Omie</span>
           <strong style="font-size:28px">{{ dados.total_omie }}</strong>
@@ -34,10 +31,6 @@
         <div class="cartao">
           <span class="rotulo">Produtos no catálogo</span>
           <strong style="font-size:28px">{{ dados.total_catalogo }}</strong>
-        </div>
-        <div class="cartao">
-          <span class="rotulo">Ainda sem ligação</span>
-          <strong style="font-size:28px">{{ dados.so_no_order_book.length }}</strong>
         </div>
       </div>
 
@@ -77,56 +70,6 @@
         </div>
       </div>
 
-      <div class="painel" style="margin-top:16px">
-        <div class="painel-topo">
-          <h2>Disponível para enviar às filiais</h2>
-          <span class="rotulo">saldo na Omie menos o que já está nas filiais</span>
-        </div>
-        <TabelaVazia v-if="!dados.quadro?.length" titulo="Nenhum produto ligado"
-          texto="Ligue os produtos à Omie para acompanhar o disponível." />
-        <div v-else class="tabela-rolagem">
-          <table class="lista">
-            <thead>
-              <tr><th>Código</th><th>Título</th><th>Na Omie</th>
-                  <th>Nas filiais</th><th>Disponível</th></tr>
-            </thead>
-            <tbody>
-              <tr v-for="q in dados.quadro" :key="q.product_id">
-                <td><strong>{{ q.codigo }}</strong></td>
-                <td>{{ q.titulo }}</td>
-                <td>{{ q.saldo_omie }}</td>
-                <td>{{ q.alocado }}</td>
-                <td>
-                  <span class="selo" :class="Number(q.disponivel) > 0 ? 'selo-enviado' : 'selo-neutro'">
-                    {{ q.disponivel }}
-                  </span>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      <div class="painel" style="margin-top:16px">
-        <div class="painel-topo">
-          <h2>Fora da Omie</h2>
-          <span class="rotulo">serão desativados na próxima importação</span>
-        </div>
-
-        <TabelaVazia v-if="!dados.so_no_order_book.length" titulo="Tudo ligado"
-          texto="Todo o catálogo veio da Omie." />
-        <div v-else class="tabela-rolagem">
-          <table class="lista">
-            <thead><tr><th>Código</th><th>Título</th></tr></thead>
-            <tbody>
-              <tr v-for="p in dados.so_no_order_book" :key="p.id">
-                <td><strong>{{ p.codigo || '—' }}</strong></td>
-                <td>{{ p.title }}</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
     </template>
   </div>
 </template>
@@ -156,23 +99,6 @@ const linhas = computed(() => {
     String(l.descricao ?? '').toLowerCase().includes(t) ||
     String(l.codigo ?? '').toLowerCase().includes(t))
 })
-
-async function importar () {
-  if (!confirm('Isto traz o cadastro da Omie para o catálogo do Order Book. Produtos que não existirem mais na Omie ficarão inativos. Continuar?')) return
-  importando.value = true
-  msg.value = ''
-  erro.value = false
-  try {
-    const r = await chamarApi('/omie/importar')
-    msg.value = `${r.novos.length} produto(s) novo(s), ${r.atualizados.length} atualizado(s), ${r.desativados.length} desativado(s).`
-    await carregar()
-  } catch (e: any) {
-    erro.value = true
-    msg.value = e.message || 'Não foi possível importar.'
-  } finally {
-    importando.value = false
-  }
-}
 
 async function corrigir () {
   importando.value = true
