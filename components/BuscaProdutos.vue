@@ -99,7 +99,7 @@ async function buscar() {
   if (props.somenteComEstoque && props.unidadeId) {
     let q = supa
       .from('stock')
-      .select('qty, products!inner(id,title,author,edition,summary,photo_url,type)')
+      .select('qty, products!inner(id,title,author,edition,summary,photo_url,type,preco_tabela)')
       .eq('unit_id', props.unidadeId)
       .gt('qty', 0)
     if (t) q = q.ilike('products.search_text', `%${t}%`)
@@ -110,7 +110,7 @@ async function buscar() {
   } else {
     let q = supa
       .from('products')
-      .select('id,title,author,edition,summary,photo_url,type')
+      .select('id,title,author,edition,summary,photo_url,type,preco_tabela')
       .eq('active', true)
     if (t) q = q.ilike('search_text', `%${t}%`)
     const { data } = await q.order('title').limit(300)

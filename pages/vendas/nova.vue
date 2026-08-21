@@ -1,64 +1,100 @@
 <template>
   <div>
     <div class="cabecalho">
-      <div><h1>Registrar venda</h1><p>Informe o que foi vendido, o valor e anexe o comprovante. O estoque baixa automaticamente.</p></div>
+      <div>
+        <h1>Nova venda</h1>
+        <p>Monte a venda, aplique o token de desconto e envie para a maquininha.</p>
+      </div>
     </div>
 
     <div v-if="erro" class="aviso aviso-erro">{{ erro }}</div>
-    <div v-if="ok" class="aviso aviso-ok">
-      Venda <strong>{{ ok }}</strong> registrada e estoque atualizado.
-      <NuxtLink to="/vendas">Ver vendas</NuxtLink>
-    </div>
 
-    <div class="painel">
-      <div class="painel-topo"><h2>1. Produtos vendidos</h2></div>
-      <div class="painel-corpo">
-        <BuscaProdutos somente-com-estoque :unidade-id="unidadeId" :escolhidos="carrinho.map((i: any) => i.id)" @escolher="adicionar" />
-      </div>
-    </div>
-
-    <div class="painel">
-      <div class="painel-topo">
-        <h2>2. Quantidades e valores</h2>
-        <strong style="font-size:16px">{{ moeda(total) }}</strong>
-      </div>
-      <div class="painel-corpo">
-        <TabelaVazia v-if="!carrinho.length" titulo="Nenhum produto"
-          texto="Busque acima entre os produtos disponíveis no seu estoque." />
-        <template v-else>
-          <div v-for="(i, idx) in carrinho" :key="i.id" class="carrinho-item">
-            <FotoProduto :url="i.photo_url" :titulo="i.title" :tipo="i.type" />
-            <div class="cresce">
-              <div class="produto-nome">{{ i.title }}</div>
-              <div class="produto-meta">Disponível: {{ i.estoque }}</div>
-            </div>
-            <div>
-              <label class="rotulo" style="margin-bottom:4px">Qtd</label>
-              <input v-model.number="i.qty" class="campo qtd" type="number" min="1" :max="i.estoque" />
-            </div>
-            <div>
-              <label class="rotulo" style="margin-bottom:4px">Valor unitário</label>
-              <input v-model.number="i.unit_price" class="campo preco" type="number" min="0" step="0.01" placeholder="0,00" />
-            </div>
-            <button class="btn-linha" style="color:var(--vermelho)" @click="carrinho.splice(idx,1)">Remover</button>
-          </div>
-        </template>
-      </div>
-    </div>
-
-    <div class="painel">
-      <div class="painel-topo"><h2>3. Comprovante</h2></div>
-      <div class="painel-corpo">
-        <EnvioFoto @arquivo="f => arquivo = f" />
-        <div class="grupo" style="margin-top:18px">
-          <label class="rotulo">Observação (opcional)</label>
-          <textarea v-model="observacao" class="campo" placeholder="Ex.: venda no culto de domingo"></textarea>
+    <div v-if="cobranca" class="painel">
+      <div class="painel-corpo" style="text-align:center;padding:36px">
+        <span class="rotulo">Código para digitar na maquininha</span>
+        <div style="font-size:44px;font-weight:700;letter-spacing:6px;margin:10px 0">
+          {{ cobranca.code }}
         </div>
-        <button class="btn btn-principal" :disabled="ocupado || !carrinho.length" @click="salvar">
-          {{ ocupado ? 'Registrando...' : 'Registrar venda e baixar estoque' }}
-        </button>
+        <div style="font-size:22px;font-weight:600;margin-bottom:6px">
+          {{ moeda(cobranca.total) }}
+        </div>
+        <p v-if="Number(cobranca.desconto) > 0" class="rotulo">
+          {{ moeda(cobranca.subtotal) }} com {{ moeda(cobranca.desconto) }} de desconto
+        </p>
+        <p style="margin-top:18px">Aguardando o pagamento na maquininha.</p>
+        <div style="display:flex;gap:8px;justify-content:center;margin-top:18px">
+          <button class="btn btn-neutro btn-p" @click="recomecar">Nova venda</button>
+          <NuxtLink to="/vendas" class="btn btn-principal btn-p">Ver vendas</NuxtLink>
+        </div>
       </div>
     </div>
+
+    <template v-else>
+      <div class="painel">
+        <div class="painel-topo"><h2>1. Produtos vendidos</h2></div>
+        <div class="painel-corpo">
+          <BuscaProdutos somente-com-estoque :unidade-id="unidadeId"
+            :escolhidos="carrinho.map((i) => i.id)" @escolher="adicionar" />
+        </div>
+      </div>
+
+      <div class="painel">
+        <div class="painel-topo">
+          <h2>2. Quantidades</h2>
+          <strong style="font-size:16px">{{ moeda(subtotal) }}</strong>
+        </div>
+        <div class="painel-corpo">
+          <TabelaVazia v-if="!carrinho.length" titulo="Nenhum produto"
+            texto="Busque acima entre os produtos disponíveis no seu estoque." />
+          <template v-else>
+            <div v-for="(i, idx) in carrinho" :key="i.id" class="carrinho-item">
+              <FotoProduto :url="i.photo_url" :titulo="i.title" :tipo="i.type" />
+              <div class="cresce">
+                <div class="produto-nome">{{ i.title }}</div>
+                <div class="produto-meta">
+                  Disponível: {{ i.estoque }} · {{ moeda(i.preco_tabela) }} cada
+                </div>
+              </div>
+              <div>
+                <label class="rotulo" style="margin-bottom:4px">Qtd</label>
+                <input v-model.number="i.qty" class="campo qtd" type="number"
+                  min="1" :max="i.estoque" />
+              </div>
+              <div style="min-width:90px;text-align:right">
+                <label class="rotulo" style="margin-bottom:4px">Subtotal</label>
+                <strong>{{ moeda(i.qty * (i.preco_tabela || 0)) }}</strong>
+              </div>
+              <button class="btn-icone" title="Remover" @click="carrinho.splice(idx, 1)">✕</button>
+            </div>
+          </template>
+        </div>
+      </div>
+
+      <div class="painel">
+        <div class="painel-topo"><h2>3. Token de desconto</h2></div>
+        <div class="painel-corpo">
+          <p class="rotulo" style="margin-bottom:10px">
+            Se o cliente tiver um token, digite abaixo. Deixe em branco se não tiver.
+          </p>
+          <input v-model="token" class="campo" style="max-width:260px;text-transform:uppercase"
+            placeholder="Ex.: PASTOR" />
+        </div>
+      </div>
+
+      <div class="painel">
+        <div class="painel-corpo" style="display:flex;justify-content:space-between;align-items:center">
+          <div>
+            <span class="rotulo">Total</span>
+            <div style="font-size:24px;font-weight:700">{{ moeda(subtotal) }}</div>
+            <span v-if="token" class="rotulo">o desconto é calculado ao enviar</span>
+          </div>
+          <button class="btn btn-principal" :disabled="!carrinho.length || enviando"
+            @click="enviar">
+            {{ enviando ? 'Enviando...' : 'Enviar para a maquininha' }}
+          </button>
+        </div>
+      </div>
+    </template>
   </div>
 </template>
 
@@ -67,54 +103,42 @@ definePageMeta({ layout: 'app' })
 
 const supa = useSupa()
 const sessao = useSessao()
-const unidadeId = computed(() => sessao.value.perfil?.unit_id ?? null)
 
 const carrinho = ref<any[]>([])
-const arquivo = ref<File | null>(null)
-const observacao = ref('')
-const erro = ref(''); const ok = ref(''); const ocupado = ref(false)
+const token = ref('')
+const erro = ref('')
+const enviando = ref(false)
+const cobranca = ref<any>(null)
 
-const total = computed(() => carrinho.value.reduce((s, i) => s + (Number(i.qty) || 0) * (Number(i.unit_price) || 0), 0))
+const unidadeId = computed(() => sessao.value.perfil?.unit_id)
+const subtotal = computed(() =>
+  carrinho.value.reduce((s, i) => s + (i.qty || 0) * (i.preco_tabela || 0), 0))
 
-function adicionar(p: any) {
-  erro.value = ''; ok.value = ''
-  if (carrinho.value.find(i => i.id === p.id)) return
-  carrinho.value.push({ ...p, qty: 1, unit_price: null })
+function adicionar (p: any) {
+  carrinho.value.push({ ...p, qty: 1 })
 }
 
-async function salvar() {
-  erro.value = ''; ok.value = ''
-  for (const i of carrinho.value) {
-    if (!i.qty || i.qty < 1) { erro.value = `Informe a quantidade de "${i.title}".`; return }
-    if (i.qty > i.estoque) { erro.value = `Você tem apenas ${i.estoque} de "${i.title}" em estoque.`; return }
-    if (i.unit_price === null || i.unit_price === '' || Number(i.unit_price) < 0) {
-      erro.value = `Informe o valor unitário de "${i.title}".`; return
-    }
-  }
-  if (!arquivo.value) { erro.value = 'Anexe a foto do comprovante da venda.'; return }
+function recomecar () {
+  carrinho.value = []
+  token.value = ''
+  cobranca.value = null
+  erro.value = ''
+}
 
-  ocupado.value = true
+async function enviar () {
+  enviando.value = true
+  erro.value = ''
   try {
-    const ext = (arquivo.value.name.split('.').pop() || 'jpg').toLowerCase()
-    const caminho = `${unidadeId.value}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`
-    const up = await supa.storage.from('comprovantes').upload(caminho, arquivo.value, { upsert: false })
-    if (up.error) throw new Error('Não foi possível enviar a foto: ' + up.error.message)
-
-    const { data, error } = await supa.rpc('fn_create_sale', {
-      p_items: carrinho.value.map(i => ({ product_id: i.id, qty: i.qty, unit_price: Number(i.unit_price) })),
-      p_receipt: caminho,
-      p_note: observacao.value || null
+    const { data, error } = await supa.rpc('fn_create_charge', {
+      p_items: carrinho.value.map(i => ({ product_id: i.id, qty: i.qty })),
+      p_token: token.value.trim() || null
     })
-    if (error) throw new Error(error.message)
-
-    const { data: v } = await supa.from('sales').select('code').eq('id', data).maybeSingle()
-    ok.value = v?.code ?? 'registrada'
-    carrinho.value = []; observacao.value = ''; arquivo.value = null
-    window.scrollTo({ top: 0, behavior: 'smooth' })
-  } catch (e: any) {
-    erro.value = e.message
+    if (error) throw error
+    cobranca.value = data
+  } catch (e) {
+    erro.value = e.message || 'Não foi possível criar a cobrança.'
   } finally {
-    ocupado.value = false
+    enviando.value = false
   }
 }
 </script>

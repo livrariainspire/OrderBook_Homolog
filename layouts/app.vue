@@ -57,6 +57,7 @@ const links = computed(() => {
     { nome: 'Meus pedidos', para: '/pedidos' },
     { nome: 'Meu estoque', para: '/estoque' },
     { nome: 'Vendas', para: '/vendas' },
+    { nome: 'Maquininha', para: '/maquininha' },
     { nome: 'Minha conta', para: '/conta' }
   ]
 })
