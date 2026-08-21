@@ -5,9 +5,17 @@
         <h1>Omie</h1>
         <p>Estoque da livraria na Omie e ligação com o catálogo do Order Book.</p>
       </div>
-      <button class="btn btn-principal btn-p" :disabled="carregando" @click="carregar">
-        {{ carregando ? 'Consultando...' : 'Atualizar' }}
-      </button>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-neutro btn-p" :disabled="ocupado" @click="corrigir">
+          Corrigir descrições
+        </button>
+        <button class="btn btn-neutro btn-p" :disabled="ocupado" @click="importar">
+          {{ importando ? 'Importando...' : 'Importar da Omie' }}
+        </button>
+        <button class="btn btn-principal btn-p" :disabled="ocupado" @click="carregar">
+          {{ carregando ? 'Consultando...' : 'Atualizar' }}
+        </button>
+      </div>
     </div>
     <div v-if="msg" class="aviso" :class="erro ? 'aviso-erro' : 'aviso-ok'">{{ msg }}</div>
     <div v-if="dados?.aviso_estoque" class="aviso aviso-erro">
@@ -159,7 +167,44 @@ const busca = ref('')
 const dados = ref<any>(null)
 const quantos = ref(10)
 const enviando = ref(false)
+const importando = ref(false)
 const resultado = ref<any>(null)
+
+const ocupado = computed(() => carregando.value || enviando.value || importando.value)
+
+async function importar () {
+  if (!confirm('Isto traz o cadastro da Omie para o catálogo do Order Book. Produtos que não existirem mais na Omie ficarão inativos. Continuar?')) return
+  importando.value = true
+  msg.value = ''
+  erro.value = false
+  try {
+    const r = await chamarApi('/omie/importar')
+    msg.value = `${r.novos.length} produto(s) novo(s), ${r.atualizados.length} atualizado(s), ${r.desativados.length} desativado(s).`
+    await carregar()
+  } catch (e: any) {
+    erro.value = true
+    msg.value = e.message || 'Não foi possível importar.'
+  } finally {
+    importando.value = false
+  }
+}
+
+async function corrigir () {
+  importando.value = true
+  msg.value = ''
+  erro.value = false
+  try {
+    const r = await chamarApi('/omie/corrigir-descricoes')
+    msg.value = `${r.ajustados.length} descrição(ões) corrigida(s) na Omie.`
+      + (r.falhas.length ? ` ${r.falhas.length} falhou(aram).` : '')
+    await carregar()
+  } catch (e: any) {
+    erro.value = true
+    msg.value = e.message || 'Não foi possível corrigir.'
+  } finally {
+    importando.value = false
+  }
+}
 
 async function enviar () {
   if (!confirm(`Isto vai CRIAR ${quantos.value} produto(s) na sua conta da Omie. Continuar?`)) return
